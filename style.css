@@ -1,0 +1,125 @@
+body {
+    font-family: sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    color: #d32f2f;
+}
+
+.status {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin: 10px 0;
+    padding: 10px 20px;
+    border-radius: 5px;
+    background-color: #e0e0e0;
+}
+
+.warning {
+    background-color: #ffdddd;
+    border: 2px solid #d32f2f;
+    color: #d32f2f;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    width: 640px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+}
+
+.control-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#start-stop-btn {
+    padding: 8px 16px;
+    font-size: 1em;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#start-stop-btn.running {
+    background-color: #f44336;
+}
+
+#model-selector {
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.yolo-status-offline {
+    color: #d32f2f;
+    font-weight: bold;
+}
+
+.yolo-status-online {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.video-container {
+    position: relative;
+    margin-top: 10px;
+    border: 5px solid #333;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #000;
+}
+
+video, canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 5px;
+}
+
+video {
+    position: relative; /* to give size to the container */
+    z-index: 1;
+}
+
+canvas {
+    z-index: 10;
+}
+
+#debug-container {
+    margin-top: 20px;
+    width: 640px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+#debug-view {
+    font-family: monospace;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    height: 100px;
+    overflow-y: auto;
+    padding: 8px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+}

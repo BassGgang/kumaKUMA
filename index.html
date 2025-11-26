@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クマ認識・警告システム</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>クマ認識・警告システム</h1>
+    <p>カメラ映像を解析し、クマを検出すると警告します。</p>
+
+    <div class="controls">
+        <div class="control-item">
+            <label for="model-selector">使用モデル:</label>
+            <select id="model-selector">
+                <option value="coco-ssd">COCO-SSD (高速)</option>
+                <option value="yolov8">YOLOv8 (高精度)</option>
+            </select>
+        </div>
+        <button id="start-stop-btn">検出を開始</button>
+        <div id="yolo-status" class="control-item yolo-status-offline">
+            YOLOv8サーバー: オフライン
+        </div>
+    </div>
+
+    <div id="loading" class="status" style="display: none;">モデルを読み込んでいます...</div>
+    <div id="warning" class="status warning" style="display: none;">警告：クマを検出しました！</div>
+    <div class="video-container">
+        <video id="webcam" autoplay muted playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div id="debug-container">
+        <h3>リアルタイム検出情報</h3>
+        <div id="debug-view">ここに検出結果が表示されます...</div>
+    </div>
+
+    <audio id="alert-sound" src="alert.mp3" preload="auto"></audio>
+
+    <!-- TensorFlow.jsとCOCO-SSDモデルを読み込む -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+    <!-- メインのスクリプト -->
+    <script src="script.js"></script>
+</body>
+</html>
