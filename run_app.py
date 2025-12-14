@@ -55,81 +55,93 @@ def main():
         print(f"モデルの読み込みに失敗しました: {e}")
         return
 
-    # カメラをキャプチャ
-    print("カメラを起動しています...")
-    cap = cv2.VideoCapture(VIDEO_SOURCE)
-    if not cap.isOpened():
-        print(f"エラー: カメラ(ID:{VIDEO_SOURCE})を開けませんでした。")
-        print("利用可能なカメラIDを確認するか、ビデオファイルのパスを指定してください。")
-        return
-    
-    print("検出を開始します。ウィンドウを選択して 'q' キーを押すと終了します。")
-
     # ウィンドウを作成
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
+    
+    cap = None
 
+    # アプリケーションのメインループ（再接続対応）
     while True:
-        # フレームを読み込む
-        ret, frame = cap.read()
-        if not ret:
-            print("エラー: カメラからフレームを取得できませんでした。")
-            break
-
-        # モデルで推論を実行
-        results = model(frame, verbose=False) # verbose=Falseでコンソール出力を抑制
-
-        bear_detected = False
-        # 検出結果を処理
-        for result in results:
-            boxes = result.boxes
-            for box in boxes:
-                conf = box.conf[0].item()
-                if conf < CONF_THRESHOLD:
+        try:
+            # カメラに接続
+            if cap is None or not cap.isOpened():
+                print(f"カメラ({VIDEO_SOURCE})に接続しています...")
+                cap = cv2.VideoCapture(VIDEO_SOURCE)
+                if not cap.isOpened():
+                    print(f"エラー: カメラを開けませんでした。5秒後に再試行します。")
+                    time.sleep(5)
                     continue
+                print("カメラに接続しました。検出を開始します。")
 
-                cls_id = int(box.cls[0].item())
-                class_name = model.names[cls_id]
+            # フレームを読み込む
+            ret, frame = cap.read()
+            if not ret:
+                print("エラー: カメラからフレームを取得できませんでした。再接続を試みます。")
+                cap.release()
+                cap = None
+                time.sleep(5) # 少し待ってから再接続
+                continue
 
-                # ターゲットクラスに含まれているか確認
-                if class_name in TARGET_CLASSES:
-                    if class_name == 'bear':
-                        bear_detected = True
-                    
-                    # バウンディングボックスの座標と色を取得
-                    x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-                    color = TARGET_CLASSES[class_name]
+            # モデルで推論を実行
+            results = model(frame, verbose=False)
 
-                    # 矩形を描画
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
+            bear_detected = False
+            # 検出結果を処理
+            for result in results:
+                boxes = result.boxes
+                for box in boxes:
+                    conf = box.conf[0].item()
+                    if conf < CONF_THRESHOLD:
+                        continue
 
-                    # ラベルを描画
-                    label = f"{class_name.upper()}: {conf:.2f}"
-                    (w, h), _ = cv2.getTextSize(label, FONT, 0.6, 2)
-                    cv2.rectangle(frame, (x1, y1 - h - 10), (x1 + w, y1), color, -1)
-                    cv2.putText(frame, label, (x1, y1 - 5), FONT, 0.6, (255, 255, 255), 2)
+                    cls_id = int(box.cls[0].item())
+                    class_name = model.names[cls_id]
 
-        # クマが検出された場合の処理
-        if bear_detected:
-            # 警告テキストを表示
-            cv2.putText(frame, "WARNING: BEAR DETECTED!", (50, 50), FONT, 1.2, (0, 0, 255), 3)
-            
-            # クールダウンを確認して警告音を再生
-            current_time = time.time()
-            if current_time - last_detection_time > SOUND_COOLDOWN:
-                last_detection_time = current_time
-                if not is_sound_playing:
-                    threading.Thread(target=play_alert_sound, daemon=True).start()
+                    if class_name in TARGET_CLASSES:
+                        if class_name == 'bear':
+                            bear_detected = True
+                        
+                        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+                        color = TARGET_CLASSES[class_name]
 
-        # 結果を表示
-        cv2.imshow(WINDOW_NAME, frame)
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
+                        label = f"{class_name.upper()}: {conf:.2f}"
+                        (w, h), _ = cv2.getTextSize(label, FONT, 0.6, 2)
+                        cv2.rectangle(frame, (x1, y1 - h - 10), (x1 + w, y1), color, -1)
+                        cv2.putText(frame, label, (x1, y1 - 5), FONT, 0.6, (255, 255, 255), 2)
 
-        # 'q'キーが押されたらループを抜ける
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+            # クマが検出された場合の処理
+            if bear_detected:
+                cv2.putText(frame, "WARNING: BEAR DETECTED!", (50, 50), FONT, 1.2, (0, 0, 255), 3)
+                current_time = time.time()
+                if current_time - last_detection_time > SOUND_COOLDOWN:
+                    last_detection_time = current_time
+                    if not is_sound_playing:
+                        threading.Thread(target=play_alert_sound, daemon=True).start()
+
+            # 結果を表示
+            cv2.imshow(WINDOW_NAME, frame)
+
+            # 'q'キーが押されたらループを抜ける
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        
+        except KeyboardInterrupt:
+            print("キーボード割り込みにより終了します。")
             break
+        except Exception as e:
+            print(f"予期せぬエラーが発生しました: {e}")
+            print("5秒後に再試行します。")
+            if cap is not None:
+                cap.release()
+                cap = None
+            time.sleep(5)
+
 
     # 後処理
     print("アプリケーションを終了します。")
-    cap.release()
+    if cap is not None:
+        cap.release()
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
