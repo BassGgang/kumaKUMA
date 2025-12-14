@@ -188,10 +188,13 @@ async function detectWithYolo() {
  */
 function renderPredictions(predictions) {
     // デバッグビューの更新
-    if (predictions.length > 0) {
-        debugView.innerText = predictions.map(p => `${p.class} (${Math.round(p.score * 100)}%)`).join('\n');
+    const targetClasses = ['bear', 'person', 'car'];
+    const filteredPredictions = predictions.filter(p => targetClasses.includes(p.class));
+
+    if (filteredPredictions.length > 0) {
+        debugView.innerText = filteredPredictions.map(p => `${p.class} (${Math.round(p.score * 100)}%)`).join('\n');
     } else {
-        debugView.innerText = '何も検出されていません...';
+        debugView.innerText = '対象（クマ、人、車）は検出されていません...';
     }
 
     // キャンバスの描画
@@ -199,23 +202,42 @@ function renderPredictions(predictions) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     let bearDetected = false;
 
-    predictions.forEach(prediction => {
-        if (prediction.class === 'bear') {
-            bearDetected = true;
-            const [x, y, width, height] = prediction.bbox;
-            
-            ctx.strokeStyle = 'red';
-            ctx.lineWidth = 4;
-            ctx.strokeRect(x, y, width, height);
-            
-            ctx.fillStyle = 'red';
-            ctx.font = '24px sans-serif';
-            const text = `クマ (${Math.round(prediction.score * 100)}%)`;
-            ctx.fillText(text, x, y > 20 ? y - 5 : 20);
+    // 検出されたオブジェクトを描画
+    filteredPredictions.forEach(prediction => {
+        const [x, y, width, height] = prediction.bbox;
+        let color, text;
+
+        switch (prediction.class) {
+            case 'bear':
+                bearDetected = true;
+                color = 'red';
+                text = `クマ (${Math.round(prediction.score * 100)}%)`;
+                break;
+            case 'person':
+                color = 'blue';
+                text = `人 (${Math.round(prediction.score * 100)}%)`;
+                break;
+            case 'car':
+                color = 'green';
+                text = `車 (${Math.round(prediction.score * 100)}%)`;
+                break;
+            default:
+                // その他のクラスは描画しない
+                return;
         }
+
+        // バウンディングボックスの描画
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x, y, width, height);
+
+        // ラベルの描画
+        ctx.fillStyle = color;
+        ctx.font = '24px sans-serif';
+        ctx.fillText(text, x, y > 20 ? y - 5 : 20);
     });
 
-    // 警告の表示・再生
+    // 警告の表示・再生（クマが検出された場合のみ）
     if (bearDetected) {
         warningDiv.style.display = 'block';
         alertSound.play().catch(e => console.warn("音声の自動再生がブロックされました。"));

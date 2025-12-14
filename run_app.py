@@ -8,13 +8,18 @@ import time
 # --- 設定 ---
 MODEL_PATH = 'yolov8n.pt'  # 使用するモデルのパス
 
-VIDEO_SOURCE = 0           # カメラのID (0は通常内蔵カメラ) masked 2025/12/11
+# VIDEO_SOURCE = 0           # カメラのID (0は通常内蔵カメラ) masked 2025/12/11
 # 変更点: カメラソースをRTSP URLに変更
-# VIDEO_SOURCE = "rtsp://kaikuma:seikonojonta@111.89.122.117:554/stream1"
+VIDEO_SOURCE = "rtsp://kaikuma:seikonojonta@111.89.122.117:554/stream1"
 
 # VIDEO_SOURCE = 'media\sample.mp4'  # <--- ダウンロードしたビデオファイル名
 ALERT_SOUND_PATH = 'alert.mp3' # 警告音のファイルパス
-TARGET_CLASS = 'bear'      # 検出対象のクラス名
+# 検出対象のクラス名と、それに対応する色(BGR)を定義
+TARGET_CLASSES = {
+    'bear': (0, 0, 255),   # 赤
+    'person': (255, 0, 0), # 青
+    'car': (0, 255, 0)     # 緑
+}
 CONF_THRESHOLD = 0.5       # 検出の信頼度のしきい値
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 WINDOW_NAME = 'Bear Detection System'
@@ -85,18 +90,22 @@ def main():
                 cls_id = int(box.cls[0].item())
                 class_name = model.names[cls_id]
 
-                if class_name == TARGET_CLASS:
-                    bear_detected = True
-                    # バウンディングボックスの座標を取得
+                # ターゲットクラスに含まれているか確認
+                if class_name in TARGET_CLASSES:
+                    if class_name == 'bear':
+                        bear_detected = True
+                    
+                    # バウンディングボックスの座標と色を取得
                     x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+                    color = TARGET_CLASSES[class_name]
 
                     # 矩形を描画
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
 
                     # ラベルを描画
                     label = f"{class_name.upper()}: {conf:.2f}"
                     (w, h), _ = cv2.getTextSize(label, FONT, 0.6, 2)
-                    cv2.rectangle(frame, (x1, y1 - h - 10), (x1 + w, y1), (0, 0, 255), -1)
+                    cv2.rectangle(frame, (x1, y1 - h - 10), (x1 + w, y1), color, -1)
                     cv2.putText(frame, label, (x1, y1 - 5), FONT, 0.6, (255, 255, 255), 2)
 
         # クマが検出された場合の処理
