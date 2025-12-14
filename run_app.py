@@ -7,7 +7,12 @@ import time
 
 # --- 設定 ---
 MODEL_PATH = 'yolov8n.pt'  # 使用するモデルのパス
-VIDEO_SOURCE = 0           # カメラのID (0は通常内蔵カメラ)
+
+VIDEO_SOURCE = 0           # カメラのID (0は通常内蔵カメラ) masked 2025/12/11
+# 変更点: カメラソースをRTSP URLに変更
+# VIDEO_SOURCE = "rtsp://kaikuma:seikonojonta@111.89.122.117:554/stream1"
+
+# VIDEO_SOURCE = 'media\sample.mp4'  # <--- ダウンロードしたビデオファイル名
 ALERT_SOUND_PATH = 'alert.mp3' # 警告音のファイルパス
 TARGET_CLASS = 'bear'      # 検出対象のクラス名
 CONF_THRESHOLD = 0.5       # 検出の信頼度のしきい値
