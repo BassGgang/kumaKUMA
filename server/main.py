@@ -23,7 +23,7 @@ app.add_middleware(
 
 # YOLOv8モデルをロード（'n'はnanoモデルで最速・最軽量）
 # 初回実行時にモデルが自動的にダウンロードされます
-model = YOLO('yolov8n.pt')
+model = YOLO('best.pt')
 print("YOLOv8 model loaded successfully.")
 
 @app.get("/")
@@ -40,7 +40,7 @@ async def detect(file: UploadFile = File(...)):
     image = Image.open(io.BytesIO(contents)).convert("RGB")
 
     # モデルで推論を実行
-    results = model(image)
+    results = model(image, conf=0.1)
 
     # 検出結果を整形
     detections = []
@@ -53,16 +53,18 @@ async def detect(file: UploadFile = File(...)):
             cls_id = int(box.cls[0].item())
             class_name = model.names[cls_id]
 
-            # フロントエンドが期待する形式に変換
-            # bbox: [x, y, width, height]
-            x1, y1, x2, y2 = xyxy
-            bbox = [x1, y1, x2 - x1, y2 - y1]
+            # "person" と "car", "bear" のみ検出
+            if class_name in ["person", "car", "bear"]:
+                # フロントエンドが期待する形式に変換
+                # bbox: [x, y, width, height]
+                x1, y1, x2, y2 = xyxy
+                bbox = [x1, y1, x2 - x1, y2 - y1]
 
-            detections.append({
-                "class": class_name,
-                "score": conf,
-                "bbox": bbox
-            })
+                detections.append({
+                    "class": class_name,
+                    "score": conf,
+                    "bbox": bbox
+                })
 
     return {"predictions": detections}
 
