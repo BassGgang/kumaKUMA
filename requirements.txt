@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+ultralytics
+python-multipart
+Pillow
+opencv-python
+playsound==1.2.2
+numpy
